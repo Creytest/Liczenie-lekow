@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liczenie leków</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.3rem; margin: 0 0 16px; }
+  label { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 10px 0; }
+  input { width: 5.5em; font-size: 1.1rem; padding: 8px; text-align: center; border-radius: 8px; border: 1px solid #888; background: transparent; color: inherit; }
+  .doba { margin-top: 16px; padding: 12px; border-radius: 10px; border: 1px solid #8884; }
+  .doba h2 { font-size: 1rem; margin: 0 0 6px; }
+  .godziny { font-size: 1.15rem; font-variant-numeric: tabular-nums; line-height: 1.7; }
+  .godziny span { display: inline-block; margin-right: 12px; }
+  .note { font-size: .85rem; opacity: .7; margin-top: 14px; }
+  .err { color: #c0392b; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h1>Liczenie leków</h1>
+
+<label>Godzina startu (0-23)
+  <input id="godz" type="number" inputmode="numeric" min="0" max="23" value="8"></label>
+<label>Tabletek w 1. dobie
+  <input id="t1" type="number" inputmode="numeric" min="1" max="24" value="1"></label>
+<label>Tabletek w kolejnych dobach
+  <input id="t2" type="number" inputmode="numeric" min="1" max="24" value="1"></label>
+<label>Liczba dób leczenia
+  <input id="doby" type="number" inputmode="numeric" min="1" max="30" value="3"></label>
+
+<div id="wynik"></div>
+<p class="note">Godziny zaokrąglone do 30 minut. * = już następnego dnia kalendarzowego. Narzędzie pomocnicze, nie zastępuje zaleceń lekarza ani ulotki.</p>
+
+<script>
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+
+function przelicz() {
+  const g = parseInt($("godz").value), t1 = parseInt($("t1").value),
+        t2 = parseInt($("t2").value), d = parseInt($("doby").value);
+  const out = $("wynik");
+  if (!(g >= 0 && g <= 23 && t1 >= 1 && t2 >= 1 && d >= 1 && d <= 30)) {
+    out.innerHTML = '<div class="err">Wpisz poprawne wartości.</div>';
+    return;
+  }
+  let html = "";
+  for (let doba = 0; doba < d; doba++) {
+    const n = doba === 0 ? t1 : t2;
+    const poczatek = g * 60 + doba * 1440;
+    let godz = "";
+    for (let i = 0; i < n; i++) {
+      const t = poczatek + 30 * Math.floor(i * 48 / n + 0.5);
+      const hhmm = pad(Math.floor((t % 1440) / 60)) + ":" + pad(t % 60);
+      const nastepny = Math.floor(t / 1440) > doba;
+      godz += `<span>${hhmm}${nastepny ? "*" : ""}</span>`;
+    }
+    html += `<div class="doba"><h2>Doba ${doba + 1} (co ${(24 / n).toFixed(2)} h)</h2><div class="godziny">${godz}</div></div>`;
+  }
+  out.innerHTML = html;
+}
+["godz", "t1", "t2", "doby"].forEach(id => $(id).addEventListener("input", przelicz));
+przelicz();
+</script>
+</body>
+</html>
